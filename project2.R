@@ -2,7 +2,7 @@
 ############################################################################################
 #course:  Time Series Analysis, T-862-TIMA
 #Date:    /09/2014
-#Students: Daniel Bergmann Sigtryggsson, Lilja Björg Guðmundsdottir, Jón Vilberg Georgsson 
+#Students: Daniel Bergmann Sigtryggsson, Lilja Bjorg Gudmundsdottir, Jon Vilberg Georgsson 
 
 ############################################################################################
 require("forecast")
