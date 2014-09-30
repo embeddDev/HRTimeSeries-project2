@@ -36,7 +36,7 @@ for(i in 1:length(data$ds.dow)){
     WD[i] = 1
   }  
 }
-data$ext_regressors <- cbind(WD,Ta.f,GR.f,W.f)
+data$ext_regressors <- cbind(WD=data$WD,Ta.f=data$Ta.f,GR.f=data$GR.f,W.f=data$W.f)
 training_set = subset(data, data$row.names <= 6000)
 test_set = subset(data,data$row.names > 6000)
 time_training = time[1:6000]
@@ -72,7 +72,7 @@ fit1 = Arima(training_set$HC.f,
              order=c(1,1,1),
              seasonal = list(order = c(1,0,1),period = 24),
              xreg = training_set$ext_regressors[,1] #working days regressors
-             )
+)
 fit1
 acf(fit1$residuals,lag.max=50)
 #We discard this model, because the residuals are not within the confidence interval
@@ -80,7 +80,7 @@ fit2 = Arima(training_set$HC.f,
              order=c(1,1,2),
              seasonal = list(order = c(1,0,1), period = 24),
              xreg = training_set$ext_regressors[,1]  # working days regressor
-              )
+)
 acf(fit2$residuals, lag.max=50)
 fit2
 #We discard this model, because the residuals are not within the confidence interval
@@ -90,16 +90,16 @@ fit3 = Arima(training_set$HC.f,
              order=c(2,1,1),
              seasonal = list(order = c(1,0,1), period = 24),
              xreg = training_set$ext_regressors[,1] #working days regressor
-             )
+)
 acf(fit3$residuals)
 fit3
 #We like this this model, because the residuals are more or less within the confidence interval and AIC has the smallest value
 # and are thus deemed to be white noise.
 dev.off()
 par(mfrow = c(2,1))
-Y1 = forecast.Arima(fit3,fan=TRUE, h=1, xreg= test_set$ext_regressors[1,1])
+forecast_1ahead = forecast.Arima(fit3,fan=TRUE, h=1, xreg= test_set$ext_regressors[1,1])
 
-plot.forecast(Y1,
+plot.forecast(forecast_1ahead,
               include=24, 
               type='l',
               fcol="red",
@@ -107,9 +107,9 @@ plot.forecast(Y1,
               main="Forecast, 1 hour ahead")
 lines(c(training_set$HC.f, test_set$HC.f[1]))
 #VANTAR AD SETJA INN TIME VEKTORINN INNA X-AS
-
-Y2= forecast.Arima(fit3,fan=TRUE, h=6, xreg= test_set$ext_regressors[1:6,1])
-plot.forecast(Y2,
+dev.off()
+forecast_6ahead= forecast.Arima(fit3,fan=TRUE, h=6, xreg= test_set$ext_regressors[1:6,1])
+plot.forecast(forecast_6ahead,
               include=24,
               type='l',
               fcol="red",
@@ -117,6 +117,7 @@ plot.forecast(Y2,
               main="Forecast, 6 hour ahead")
 lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 #------------------------Task 3 (15%)----------------------------------------
+dev.off()
 plot(data$Ta.f ~time,
      main="Ambient air temperature data",
      type='l',
@@ -130,33 +131,24 @@ plot(diff(data$Ta.f,difference=1)
      ylab='Centigrade',
      col='red')
 grid()
-plot(diff(data$Ta.f,difference=2)
-     ~time[3:length(data$Ta.f)],
-     main="Ambient air temperature data (second difference)",
-     type='l',
-     ylab='Centigrade',
-     xlab='time',
-     col='red')
-grid()
 dev.off()
 ccf(diff(data$HC.f,difference=1),diff(data$Ta.f,difference=1),
     main="cross correlation, HC vs amb temp",
     col='red')
 #Clearly, ambient temp shares common trend/seasonality with heatconsumtion data. Thus, we wish to prewhiten the amb temp series.
 
-Ta.filtered = filter(training_set$Ta.f,
-                filter=c(-0.8967,1,-0.8109,-0.244123),
-                sides=2)
-ccf(fit3$residuals, Ta.filtered,na.action=na.omit)
+
+ambTemp_filtered <- Arima(training_set$Ta.f,model=fit3)
+#here we have the differences between observed fit3 valuse and estimated, Ta.f values based on the fit3 model
+ccf(fit3$residuals, residuals(ambTemp_filtered), na.action=na.omit)
 grid()
-#Lag -2,lag -3, lag-4,lag-5
-a = cbind(training_set$Ta.f,
-          lag2x= lag(fit3,-2),
-          lag3x= lag(fit3,-3),
-          lag4x= lag(fit3,-4),
-          lag5x= lag(fit3,-5))
-lm(training_set$Ta.f ~lag2x+lag3x+lag4x+lag5x,
-   data=a, na.action=na.omit)
+#We obsere non-zero values at lag 4 and perhaps other lags beyond 4, with no particular pattern
+# correlations near 9 at other lags.
+#>>> possible regression terms in model: lag(HC.f,4), perhaps additional lags of HC.f
+# no lags of Ta.f
+HC_lag4 = lag(data$HC.f,4)
+data$ext_regressors = cbind(data$ext_regressors,HC_lag4 )
+
 
 dev.off()
 plot(data$W.f ~time,
@@ -220,3 +212,5 @@ fit6 = Arima(training_set$HC.f,
 acf(fit6$residuals)
 fit6
 
+#Sources: STAT 510, Penn state,lesson 9.1
+#         https://onlinecourses.science.psu.edu/stat510/node/75
