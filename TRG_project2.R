@@ -36,7 +36,7 @@ for(i in 1:length(data$ds.dow)){
     WD[i] = 1
   }  
 }
-data$ext_reggressors <- cbind(WD,Ta.f,GR.f,W.f)
+data$ext_regressors <- cbind(WD,Ta.f,GR.f,W.f)
 training_set = subset(data, data$row.names <= 6000)
 test_set = subset(data,data$row.names > 6000)
 time_training = time[1:6000]
@@ -71,7 +71,7 @@ dev.off()
 fit1 = Arima(training_set$HC.f, 
              order=c(1,1,1),
              seasonal = list(order = c(1,0,1),period = 24),
-             xreg = training_set$ext_reggressors[,1] #working days regressors
+             xreg = training_set$ext_regressors[,1] #working days regressors
              )
 fit1
 acf(fit1$residuals,lag.max=50)
@@ -79,7 +79,7 @@ acf(fit1$residuals,lag.max=50)
 fit2 = Arima(training_set$HC.f, 
              order=c(1,1,2),
              seasonal = list(order = c(1,0,1), period = 24),
-             xreg = training_set$ext_reggressors[,1]  # working days regressor
+             xreg = training_set$ext_regressors[,1]  # working days regressor
               )
 acf(fit2$residuals, lag.max=50)
 fit2
@@ -89,7 +89,7 @@ x =[HC_reg,training_set$Ta.f]
 fit3 = Arima(training_set$HC.f,
              order=c(2,1,1),
              seasonal = list(order = c(1,0,1), period = 24),
-             xreg = training_set$ext_reggressors[,1] #working days regressor
+             xreg = training_set$ext_regressors[,1] #working days regressor
              )
 acf(fit3$residuals)
 fit3
@@ -202,7 +202,7 @@ dev.off()
 fit4 = Arima(training_set$HC.f,
              order=c(2,1,1),
              seasonal = list(order = c(1,0,1), period = 24),
-             xreg = training_set$ext_reggressors[,1:2])
+             xreg = training_set$ext_regressors[,1:2])
 acf(fit4$residuals)
 fit4
 #fit 5 is the arma model with 4 external regressors, work-days, amb temperature and wind-speed
