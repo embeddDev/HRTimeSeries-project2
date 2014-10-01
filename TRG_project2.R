@@ -7,10 +7,10 @@
 ############################################################################################
 require("forecast")
 data = read.csv("veks.csv")
-data$HC.f = ts(data$HC.f,frequency = 24)
-data$Ta.f = ts(data$Ta.f, frequency = 24)
-data$W.f = ts(data$W.f, frequency = 24)
-data$GR.f = ts(data$GR.f, frequency =24)
+data$HC.f = ts(data$HC.f,frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
+data$Ta.f = ts(data$Ta.f, frequency = 24, start =c( 1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
+data$W.f = ts(data$W.f, frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
+data$GR.f = ts(data$GR.f, frequency =24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
 time = as.POSIXct("1960-1-1") + (data$jdate*24 + data$hh) *3600
 #Consider the time series of heat consumption.
 par(mfrow=c(2,1))
@@ -141,7 +141,7 @@ ccf(diff(data$HC.f,difference=1),diff(data$Ta.f,difference=1),
 #Clearly, ambient temp shares common trend/seasonality with heatconsumtion data. Thus, we wish to prewhiten the amb temp series.
 
 
-ambTemp_filtered <- Arima(training_set$Ta.f,model=fit3)
+ambTemp_filtered <- arima(training_set$Ta.f,model=fit3)
 #here we have the differences between observed fit3 valuse and estimated, Ta.f values based on the fit3 model
 ccf(fit3$residuals, residuals(ambTemp_filtered), na.action=na.omit)
 grid()
