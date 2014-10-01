@@ -7,6 +7,10 @@
 ############################################################################################
 require("forecast")
 data = read.csv("veks.csv")
+data$HC.f = ts(data$HC.f,frequency = 24)
+data$Ta.f = ts(data$Ta.f, frequency = 24)
+data$W.f = ts(data$W.f, frequency = 24)
+data$GR.f = ts(data$GR.f, frequency =24)
 time = as.POSIXct("1960-1-1") + (data$jdate*24 + data$hh) *3600
 #Consider the time series of heat consumption.
 par(mfrow=c(2,1))
@@ -85,7 +89,6 @@ acf(fit2$residuals, lag.max=50)
 fit2
 #We discard this model, because the residuals are not within the confidence interval
 
-x =[HC_reg,training_set$Ta.f]
 fit3 = Arima(training_set$HC.f,
              order=c(2,1,1),
              seasonal = list(order = c(1,0,1), period = 24),
