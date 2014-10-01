@@ -14,7 +14,7 @@ data$GR.f = ts(data$GR.f, frequency =24, start = c(1995,((data$ds.diy[1]*24)+dat
 time = as.POSIXct("1960-1-1") + (data$jdate*24 + data$hh) *3600
 #Consider the time series of heat consumption.
 par(mfrow=c(2,1))
-plot(data$HC.f ~time,
+plot.ts(data$HC.f ,
      type='l',
      main='Original Heat consumption(GJ/h) data ',
      xlab="running time",
@@ -23,7 +23,7 @@ plot(data$HC.f ~time,
 grid()
 #Comment: we can see that the data set is nonstationary. Thus, we difference the series.
 
-plot(diff(data$HC.f, difference=1) ~time[2:length(time)],
+plot.ts(diff(data$HC.f, difference=1) ,
      type='l',
      main='Differenced Heat consumption(GJ/h) data ',
      xlab="running time",
@@ -109,8 +109,7 @@ plot.forecast(forecast_1ahead,
               col='blue',
               main="Forecast, 1 hour ahead")
 lines(c(training_set$HC.f, test_set$HC.f[1]))
-#VANTAR AD SETJA INN TIME VEKTORINN INNA X-AS
-dev.off()
+
 forecast_6ahead= forecast.Arima(fit3,fan=TRUE, h=6, xreg= test_set$ext_regressors[1:6,1])
 plot.forecast(forecast_6ahead,
               include=24,
@@ -121,14 +120,13 @@ plot.forecast(forecast_6ahead,
 lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 #------------------------Task 3 (15%)----------------------------------------
 dev.off()
-plot(data$Ta.f ~time,
+plot.ts(data$Ta.f,
      main="Ambient air temperature data",
      type='l',
      ylab='Centigrade',
      col='red')
 grid()
-plot(diff(data$Ta.f,difference=1)
-     ~time[2:length(data$Ta.f)],
+plot.ts(diff(data$Ta.f,difference=1),
      main="Ambient air temperature data (first difference)",
      type='l',
      ylab='Centigrade',
