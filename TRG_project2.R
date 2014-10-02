@@ -139,7 +139,11 @@ ccf(diff(data$HC.f,difference=1),diff(data$Ta.f,difference=1),
 #Clearly, ambient temp shares common trend/seasonality with heatconsumtion data. Thus, we wish to prewhiten the amb temp series.
 
 
-ambTemp_filtered <- arima(training_set$Ta.f,model=fit3)
+ambTemp_filtered = Arima(training_set$Ta.f,
+                          model=fit3, 
+                          fixed = c( 0.9766,  -0.2084, -0.8984,  0.9961,  -0.9224 ,-14.2153),
+                         )
+
 #here we have the differences between observed fit3 valuse and estimated, Ta.f values based on the fit3 model
 ccf(fit3$residuals, residuals(ambTemp_filtered), na.action=na.omit)
 grid()
