@@ -12,6 +12,7 @@ data$Ta.f = ts(data$Ta.f, frequency = 24, start =c( 1995,((data$ds.diy[1]*24)+da
 data$W.f = ts(data$W.f, frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
 data$GR.f = ts(data$GR.f, frequency =24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
 time = as.POSIXct("1960-1-1") + (data$jdate*24 + data$hh) *3600
+# ------------ Task 1 ----------------------
 #Consider the time series of heat consumption.
 par(mfrow=c(2,1))
 plot.ts(data$HC.f ,
@@ -31,21 +32,6 @@ plot.ts(diff(data$HC.f, difference=1) ,
      col="red")
 grid()
 
-WD = NULL
-for(i in 1:length(data$ds.dow)){
-  if(data$ds.tod[i] == 1){
-    WD[i] = 0
-  }
-  else{
-    WD[i] = 1
-  }  
-}
-data$ext_regressors <- cbind(WD=data$WD,Ta.f=data$Ta.f,GR.f=data$GR.f,W.f=data$W.f)
-training_set = subset(data, data$row.names <= 6000)
-test_set = subset(data,data$row.names > 6000)
-time_training = time[1:6000]
-time_test = time[6001:length(time)]
-
 #Estimate the autocovariance, autocorrelation and partial autocorrelation
 #functions for the heat consumption.
 dev.off()
@@ -64,12 +50,41 @@ spectrum(diff(data$HC.f, difference=1),
 #Comment: From the ACF and PACF, we assume we can model the seris as ARIMA(8,2) from table 6.1
 #     This is probably too many parameters. Thus we suspect there is seaonality, we need to look at seasonal variations
 #     The spectrum reinforces this theory that there are still some variations in higher frequencies.
+
+# -------------------------- Task 2 ---------------------------
+# A model for predicting the heat consumption several hours ahead should be formulated,
+# and the prediction performance should be analyzed. In particular the prediction 
+# performance for a one hour and a six hour prediction shall be described. In this 
+# task only the measured heat consumption (and possibly the time) should be used in the model.
+# Make a vector for week/weekend days
+WD = NULL                        
+for(i in 1:length(data$ds.dow)){
+  if(data$ds.tod[i] == 1){
+    WD[i] = 0
+  }
+  else{                    
+    WD[i] = 1
+  }  
+}
+# making a matrix with the regressors we want to use, do it here, before we cut to training
+# and test set.
+data$ext_regressors <- cbind(WD=data$WD,Ta.f=data$Ta.f,GR.f=data$GR.f,W.f=data$W.f)
+# split the data into training set and test set
+training_set = subset(data, data$row.names <= 6000)
+test_set = subset(data,data$row.names > 6000)
+time_training = time[1:6000]
+time_test = time[6001:length(time)]
+
+# Elaborate on your choice of model.  Your predictions should 
+# include prediction intervals and an assessment of their quality.
+
 par(mfrow = c(2,1))
 acf(diff(data$HC.f, difference=1), lag.max=300)
 pacf(diff(data$HC.f, difference=1), lag.max=300)
+
 #Comment: We can see 24hour periodic correlations in the data, and some weekly variations
 # We want our model to include 24hour and weekly seasonality 
-# We will accomodate weekend seasonality with a vactor of external regressors.
+# We will accomodate weekend seasonality with a vector of external regressors.
 # We have made this regressor earlier in data$ext_regressors[,1]
 dev.off()
 fit1 = Arima(training_set$HC.f, 
@@ -118,6 +133,10 @@ plot.forecast(forecast_6ahead,
               col='blue',
               main="Forecast, 6 hour ahead")
 lines(c(training_set$HC.f, test_set$HC.f[1:6]))
+
+# EIGUM EFTIR AÐ GERA PREDICTION PERFOMRMANS Á SPÁNNI OG
+# META QUALITY Á PREDICTION INTERVAL.
+
 #------------------------Task 3 (15%)----------------------------------------
 dev.off()
 plot.ts(data$Ta.f,
@@ -219,3 +238,7 @@ fit6
 
 #Sources: STAT 510, Penn state,lesson 9.1
 #         https://onlinecourses.science.psu.edu/stat510/node/75
+
+
+
+## ccf á residuals þá geta se´ð laggið betur
