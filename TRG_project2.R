@@ -66,8 +66,7 @@ for(i in 1:length(data$ds.dow)){
     WD[i] = 1
   }  
 }
-# making a matrix with the regressors we want to use, do it here, before we cut to training
-# and test set.
+# HVAÐ ERUM VIÐ AÐ GERA HÉR?
 data$ext_regressors <- cbind(WD=data$WD,Ta.f=data$Ta.f,GR.f=data$GR.f,W.f=data$W.f)
 # split the data into training set and test set
 training_set = subset(data, data$row.names <= 6000)
@@ -156,21 +155,21 @@ ccf(diff(data$HC.f,difference=1),diff(data$Ta.f,difference=1),
     main="cross correlation, HC vs amb temp",
     col='red')
 #Clearly, ambient temp shares common trend/seasonality with heatconsumtion data. Thus, we wish to prewhiten the amb temp series.
+acf(diff(training_set$Ta.f))
+temp.mdl <- arima(training_set$Ta.f,order=c(2,1,0),seasonal=list(order=c(1,0,0),period=24))
+hct.res <- residuals(arima(training_set$HC.f,order=c(2,1,0),seasonal=list(order=c(1,0,0),period=24),fixed=temp.mdl$coef))
 
 
-ambTemp_filtered = Arima(training_set$Ta.f,
-                          model=fit3, 
-                          fixed = c( 0.9766,  -0.2084, -0.8984,  0.9961,  -0.9224 ,-14.2153),
-                         )
-
+ccf(hct.res,temp.mdl$residuals)
+#ambTemp_filtered <- arima(training_set$Ta.f,model=fit3)
 #here we have the differences between observed fit3 valuse and estimated, Ta.f values based on the fit3 model
-ccf(fit3$residuals, residuals(ambTemp_filtered), na.action=na.omit)
+#ccf(fit3$residuals, residuals(ambTemp_filtered), na.action=na.omit)
 grid()
 #We obsere non-zero values at lag 4 and perhaps other lags beyond 4, with no particular pattern
 # correlations near 9 at other lags.
 #>>> possible regression terms in model: lag(HC.f,4), perhaps additional lags of HC.f
 # no lags of Ta.f
-HC_lag4 = lag(data$HC.f,4)
+HC_lag4 = lag(data$HC.f,1)
 data$ext_regressors = cbind(data$ext_regressors,HC_lag4 )
 
 
