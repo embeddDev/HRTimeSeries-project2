@@ -66,7 +66,7 @@ for(i in 1:length(data$ds.dow)){
     WD[i] = 1
   }  
 }
-# HVAÐ ERUM VIÐ AÐ GERA HÉR?
+
 data$ext_regressors <- cbind(WD=data$WD,Ta.f=data$Ta.f,GR.f=data$GR.f,W.f=data$W.f)
 # split the data into training set and test set
 training_set = subset(data, data$row.names <= 6000)
@@ -74,12 +74,11 @@ test_set = subset(data,data$row.names > 6000)
 time_training = time[1:6000]
 time_test = time[6001:length(time)]
 
-# Elaborate on your choice of model.  Your predictions should 
-# include prediction intervals and an assessment of their quality.
-
 par(mfrow = c(2,1))
 acf(diff(data$HC.f, difference=1), lag.max=300)
 pacf(diff(data$HC.f, difference=1), lag.max=300)
+# Elaborate on your choice of model.  Your predictions should 
+# include prediction intervals and an assessment of their quality.
 
 #Comment: We can see 24hour periodic correlations in the data, and some weekly variations
 # We want our model to include 24hour and weekly seasonality 
@@ -133,7 +132,7 @@ plot.forecast(forecast_6ahead,
               main="Forecast, 6 hour ahead")
 lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 
-# EIGUM EFTIR AÐ GERA PREDICTION PERFOMRMANS Á SPÁNNI OG
+
 # META QUALITY Á PREDICTION INTERVAL.
 
 #------------------------Task 3 (15%)----------------------------------------
@@ -241,3 +240,6 @@ fit6
 
 
 ## ccf á residuals þá geta se´ð laggið betur
+
+
+
