@@ -6,30 +6,32 @@
 #
 ############################################################################################
 require("forecast")
+install.packages("ggplot2")
+require("ggplot2")
 data = read.csv("veks.csv")
-data$HC.f = ts(data$HC.f,frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
-data$Ta.f = ts(data$Ta.f, frequency = 24, start =c( 1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
-data$W.f = ts(data$W.f, frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
-data$GR.f = ts(data$GR.f, frequency =24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
+#data$HC.f = ts(data$HC.f,frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
+#data$Ta.f = ts(data$Ta.f, frequency = 24, start =c( 1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
+#data$W.f = ts(data$W.f, frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
+#data$GR.f = ts(data$GR.f, frequency =24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
 time = as.POSIXct("1960-1-1") + (data$jdate*24 + data$hh) *3600
 # ------------ Task 1 ----------------------
 #Consider the time series of heat consumption.
 par(mfrow=c(2,1))
 plot.ts(data$HC.f ,
-     type='l',
-     main='Original Heat consumption(GJ/h) data ',
-     xlab="running time",
-     ylab="Heat consumption [GJ/h]",
-     col="red")
+        type='l',
+        main='Original Heat consumption(GJ/h) data ',
+        xlab="running time",
+        ylab="Heat consumption [GJ/h]",
+        col="red")
 grid()
 #Comment: we can see that the data set is nonstationary. Thus, we difference the series.
 
 plot.ts(diff(data$HC.f, difference=1) ,
-     type='l',
-     main='Differenced Heat consumption(GJ/h) data ',
-     xlab="running time",
-     ylab="Heat consumption [GJ/h]",
-     col="red")
+        type='l',
+        main='Differenced Heat consumption(GJ/h) data ',
+        xlab="running time",
+        ylab="Heat consumption [GJ/h]",
+        col="red")
 grid()
 
 #Estimate the autocovariance, autocorrelation and partial autocorrelation
@@ -114,7 +116,6 @@ fit3
 dev.off()
 par(mfrow = c(2,1))
 forecast_1ahead = forecast.Arima(fit3,fan=TRUE, h=1, xreg= test_set$ext_regressors[1,1])
-
 plot.forecast(forecast_1ahead,
               include=24, 
               type='l',
@@ -134,20 +135,49 @@ lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 
 
 # META QUALITY Á PREDICTION INTERVAL.
+last <- function(x) { tail(x, n = 1) }
+compare.q = seq(50,99,by=1)
+sigma.eps_1ahead = sd(last(forecast_1ahead$residuals))
+sigma.eps_6ahead = sd(tail(forecast_6ahead$residuals,n=6))
+obs.p_1ahead = c()
+obs.p_6ahead = c()
+for(ii in compare.q){
+  obs.p_1ahead <- c(obs.p_1ahead,mean(pnorm(last(forecast_1ahead$residuals),sd=sigma.eps_1ahead) <= ii))
+  obs.p_6ahead <- c(obs.p_1ahead,mean(pnorm(tail(forecast_6ahead$residuals,n=6),sd=sigma.eps_6ahead) <= ii))
+}
+
+dat.obs_1ahead <- data.frame(Observed=obs.p_1ahead,Theoretical=compare.q)
+dat.theo_1ahead <- data.frame(Observed=compare.q,Theoretical=compare.q)
+dat.obs_6ahead <- data.frame(Observed=obs.p_6ahead,Theoretical=compare.q)
+dat.theo_6ahead <- data.frame(Observed=compare.q,Theoretical=compare.q)
+
+ggplot_object = ggplot(data=dat.obs_1ahead )
+ggplot_object+
+  geom_line(data=dat.theo_1ahead,mapping=aes(x=Theoretical,y=Observed),size=2)+
+  geom_point(data=dat.obs_1ahead,mapping=aes(x=Theoretical,y=Observed),size=5,colour="blue")
+
+ggplot_object = ggplot(data=dat.obs_6ahead )
+ggplot_object+
+  geom_line(data=dat.theo_1ahead,mapping=aes(x=Theoretical,y=Observed),size=2)+
+  geom_point(data=dat.obs_6ahead,mapping=aes(x=Theoretical,y=Observed),size=5,colour="blue")
+
+#---------------------------------------------------------------
+
+
 
 #------------------------Task 3 (15%)----------------------------------------
 dev.off()
 plot.ts(data$Ta.f,
-     main="Ambient air temperature data",
-     type='l',
-     ylab='Centigrade',
-     col='red')
+        main="Ambient air temperature data",
+        type='l',
+        ylab='Centigrade',
+        col='red')
 grid()
 plot.ts(diff(data$Ta.f,difference=1),
-     main="Ambient air temperature data (first difference)",
-     type='l',
-     ylab='Centigrade',
-     col='red')
+        main="Ambient air temperature data (first difference)",
+        type='l',
+        ylab='Centigrade',
+        col='red')
 grid()
 dev.off()
 ccf(diff(data$HC.f,difference=1),diff(data$Ta.f,difference=1),
