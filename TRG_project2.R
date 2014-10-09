@@ -186,9 +186,9 @@ ccf(diff(data$HC.f,difference=1),diff(data$Ta.f,difference=1),
 #Clearly, ambient temp shares common trend/seasonality with heatconsumtion data. Thus, we wish to prewhiten the amb temp series.
 acf(diff(training_set$Ta.f))
 #We make new model for external regressor Ta.f
-temp.mdl <- arima(training_set$Ta.f,order=c(2,1,0),seasonal=list(order=c(1,0,0),period=24))
+temp.mdl <- arima(training_set$Ta.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24))
 #Now we use this model to prewhiten our data (heat consumtion)
-hct.res <- residuals(arima(training_set$HC.f,order=c(2,1,0),seasonal=list(order=c(1,0,0),period=24),fixed=temp.mdl$coef))
+hct.res <- residuals(arima(training_set$HC.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24),fixed=temp.mdl$coef))
 
 
 ccf(hct.res,temp.mdl$residuals)
@@ -219,12 +219,12 @@ par(mfrow=c(2,1))
 acf(diff(training_set$W.f))
 pacf(diff(training_set$W.f))
 #We make new model for external regressorb W.f
-temp.mdl <- arima(training_set$W.f,order=c(2,0,0))
+temp.mdl <- arima(training_set$W.f,order=c(2,1,1), seasonal = list(order=c(1,0,0),period=24))
 #Now we use this model to prewhiten our data (heat consumtion)
-HC_Wind.res <- residuals(arima(training_set$HC.f,order=c(2,1,0),seasonal=list(order=c(1,0,0),period=24),fixed=c(temp.mdl$coef)))
-HC_Wind.res = na.action(HC_Wind.res,na.rm=TRUE)
+HC_Wind.res <- residuals(arima(training_set$HC.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24),fixed=c(temp.mdl$coef)))
+#HC_Wind.res = na.action(HC_Wind.res,na.rm=TRUE)
 dev.off()
-ccf(HC_Wind.res,temp.mdl$residuals)  #FUCKED LAG
+ccf(HC_Wind.res,temp.mdl$residuals) 
 grid()
 W_lag = lag(training_set$W.f,2)
 training_set$ext_regressors = cbind(WD=WD[1:6000],Ta_lag1=Ta_lag1, W_lag=W_lag)
@@ -256,28 +256,49 @@ par(mfrow=c(2,1))
 acf(diff(training_set$GR.f))
 pacf(diff(training_set$GR.f))
 #We make new model for external regressor GR.f
-temp.mdl <- arima(training_set$GR.f,order=c(1,1,0),seasonal=list(order=c(1,0,0),period=24))
+temp.mdl <- arima(training_set$GR.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24))
 #Now we use this model to prewhiten our data (heat consumtion)
-HC_GR.res <- residuals(arima(training_set$HC.f,order=c(1,1,0),seasonal=list(order=c(1,0,0),period=24),fixed=temp.mdl$coef))
+HC_GR.res <- residuals(arima(training_set$HC.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24),fixed=temp.mdl$coef))
 
 dev.off()
 ccf(HC_GR.res,temp.mdl$residuals)  #FUCKED LAG
 grid()
-GR_lag = lag(training_set$W.f,1)
+GR_lag = lag(training_set$GR.f,1)
 training_set$ext_regressors = cbind(WD=WD[1:6000],Ta_lag1=Ta_lag1, W_lag=W_lag,GR_lag=GR_lag)
 
 
 
 #TASK4
 dev.off()
-#fit4 is the arma model with 2 external regressors, work days and amb temp
+#fit4 is the arma model with 4 external regressors, work days and amb temp laged 1
+# outside wind lagged 2 and solar radiation data lagged 1
 fit4 = Arima(training_set$HC.f,
              order=c(2,1,1),
              seasonal = list(order = c(1,0,1), period = 24),
              xreg = training_set$ext_regressors[,1:4])
 acf(fit4$residuals)
 fit4
+dev.off()
+par(mfrow = c(2,1))
+forecast_1ahead = forecast.Arima(fit4,fan=TRUE, h=1, xreg= test_set$ext_regressors[1,1:4])
+plot.forecast(forecast_1ahead,
+              include=24, 
+              type='l',
+              fcol="red",
+              col='blue',
+              main="Forecast, 1 hour ahead")
+lines(c(training_set$HC.f, test_set$HC.f[1]))
+
+forecast_6ahead= forecast.Arima(fit4,fan=TRUE, h=6, xreg= test_set$ext_regressors[1:6,1:4])
+plot.forecast(forecast_6ahead,
+              include=24,
+              type='l',
+              fcol="red",
+              col='blue',
+              main="Forecast, 6 hour ahead")
+lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 
 
 
 #TASK 5
+
