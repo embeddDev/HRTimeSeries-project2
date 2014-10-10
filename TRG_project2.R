@@ -59,6 +59,14 @@ spectrum(diff(data$HC.f, difference=1),
 # and the prediction performance should be analyzed. In particular the prediction 
 # performance for a one hour and a six hour prediction shall be described. In this 
 # task only the measured heat consumption (and possibly the time) should be used in the model.
+
+par(mfrow = c(2,1))
+acf(diff(data$HC.f, difference=1), lag.max=300)
+pacf(diff(data$HC.f, difference=1), lag.max=300)
+# Comment: We can see 24hour periodic correlations in the data, and some weekly variations
+# We want our model to include 24hour and weekly seasonality 
+# We will accomodate weekend seasonality with a vector of external regressors.
+
 # Make a vector for week/weekend days
 WD = NULL                        
 for(i in 1:length(data$ds.dow)){
@@ -77,16 +85,9 @@ test_set = subset(data,data$row.names > 6000)
 time_training = time[1:6000]
 time_test = time[6001:length(time)]
 
-par(mfrow = c(2,1))
-acf(diff(data$HC.f, difference=1), lag.max=300)
-pacf(diff(data$HC.f, difference=1), lag.max=300)
 # Elaborate on your choice of model.  Your predictions should 
 # include prediction intervals and an assessment of their quality.
 
-#Comment: We can see 24hour periodic correlations in the data, and some weekly variations
-# We want our model to include 24hour and weekly seasonality 
-# We will accomodate weekend seasonality with a vector of external regressors.
-# We have made this regressor earlier in data$ext_regressors[,1]
 dev.off()
 fit1 = Arima(training_set$HC.f, 
              order=c(1,1,1),
@@ -112,7 +113,7 @@ fit3 = Arima(training_set$HC.f,
 )
 acf(fit3$residuals)
 fit3
-#We like this this model, because the residuals are more or less within the confidence interval and AIC has the smallest value
+# We like this this model, because the residuals are more or less within the confidence interval and AIC has the smallest value
 # and are thus deemed to be white noise.
 dev.off()
 par(mfrow = c(2,1))
@@ -136,6 +137,7 @@ lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 
 
 # META QUALITY Á PREDICTION INTERVAL.
+dev.off()
 compare.q = seq(50,99,by=1)
 qqplot(x=training_set$HC.f, y=forecast_6ahead$residuals,plot.it=TRUE, probs = compare.q,
        xlab = "Theoretical Quantiles", ylab = "Sample Quantiles")
@@ -171,7 +173,7 @@ plot.ts(diff(data$Ta.f,difference=1),
         ylab='Centigrade',
         col='red')
 grid()
-dev.off()
+
 ccf(diff(data$HC.f,difference=1),diff(data$Ta.f,difference=1),
     main="cross correlation, HC vs amb temp",
     col='red')
@@ -190,7 +192,7 @@ data$ext_regressors = cbind(WD=WD,Ta_lag1=Ta_lag1)
 
 
 dev.off()
-plot(data$W.f ~time,
+plot(data$W.f,
      main="Wind speed data",
      type='l',
      ylab='m/s',
@@ -216,7 +218,14 @@ temp.mdl <- arima(training_set$W.f,order=c(2,1,1), seasonal = list(order=c(1,0,0
 HC_Wind.res <- residuals(arima(training_set$HC.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24),fixed=c(temp.mdl$coef)))
 #HC_Wind.res = na.action(HC_Wind.res,na.rm=TRUE)
 dev.off()
+<<<<<<< Updated upstream
 ccf(HC_Wind.res,temp.mdl$residuals) 
+=======
+
+
+ccf(HC_Wind.res,temp.mdl$residuals)  
+
+>>>>>>> Stashed changes
 grid()
 W_lag = lag(data$W.f,2)
 data$ext_regressors = cbind(WD=WD,Ta_lag1=Ta_lag1, W_lag=W_lag)
@@ -295,7 +304,32 @@ plot.forecast(forecast_6ahead,
               main="Forecast, 6 hour ahead")
 lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 
+# ATTI THETTA MODEL EKKI AD VERA BETRA, COMMENTA A THAD?
+# This model was suppose to be better than the model using just heat consumption but it 
+# looks pretty much the same. Maby the temperature, radiation etc. aren't influencing the
+# heat consumption as we thought.
+
+# -------------------------  TASK 5  --------------------------
+
+Predict1 <- array(NA, c(1000,1)) 
+for(a in 1:1000){ 
+  fit4.sim1 <- arima.sim(model = list(ar = c(1.0446,-0.2337), ma = c(-0.8967)), n=1,innov=training_set$HC.f[6000])
+  Predict1[a,] = unlist(fit4.sim1)
+}
+hist(Predict1)
+
+Predict2 <- array(NA, c(1000,6)) 
+for(a in 1:1000){ 
+  fit4.sim6 <- arima.sim(model = list(ar = c(1.0446,-0.2337), ma = c(-0.8967)), n=6,innov=training_set$HC.f[6000])
+  Predict2[a,] = unlist(fit4.sim6)
+}
+hist(Predict2)
+# Predict eitt virkar vel en tad er eitthvad vitlaust i predict2, t.e fit4.sim6 linan generate-ar bara eitt
+# gildi en eg helt ad tetta aetti ad virka til ad fa 6 gildi fram i timann. tetta med innov, tad er eitthvad
+# til ad segja ad vid seum ad gera ut fra tvi gildi (a samt ad vera haegt ad setja inn vektor en ta fae eg svo
+# asnalegt gildi ut), ef vid erum ekki med innov skipun faum vid bara tolur sem eru td. 0.02, -0.14,...
+# te random tolur i kringum null.En eg var vakandi til kl.4 i nott ad laera og aetla heim ad sofa nuna :P
+# verd i skolanum um helgina, vertu i bandi vid mig ef tu kikir eitthvad a tetta, annars er bara ad skila.
 
 
-#TASK 5
 
