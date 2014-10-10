@@ -1,13 +1,14 @@
 #TASK 1 - project 2
+
 ############################################################################################
 #course:  Time Series Analysis, T-862-TIMA
-#Date:    /09/2014
+#Date:    10/09/2014
 #Students: Daniel Bergmann Sigtryggsson, Lilja Bjorg Gudmundsdottir, Jon Vilberg Georgsson 
 #
 ############################################################################################
 require("forecast")
-install.packages("ggplot2")
-require("ggplot2")
+#install.packages("ggplot2")
+#require("ggplot2")
 data = read.csv("veks.csv")
 #data$HC.f = ts(data$HC.f,frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
 #data$Ta.f = ts(data$Ta.f, frequency = 24, start =c( 1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
@@ -135,31 +136,22 @@ lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 
 
 # META QUALITY Á PREDICTION INTERVAL.
-last <- function(x) { tail(x, n = 1) }
 compare.q = seq(50,99,by=1)
-sigma.eps_1ahead = sd(last(forecast_1ahead$residuals))
-sigma.eps_6ahead = sd(tail(forecast_6ahead$residuals,n=6))
-obs.p_1ahead = c()
-obs.p_6ahead = c()
-for(ii in compare.q){
-  obs.p_1ahead <- c(obs.p_1ahead,mean(pnorm(last(forecast_1ahead$residuals),sd=sigma.eps_1ahead) <= ii))
-  obs.p_6ahead <- c(obs.p_1ahead,mean(pnorm(tail(forecast_6ahead$residuals,n=6),sd=sigma.eps_6ahead) <= ii))
-}
+qqplot(x=training_set$HC.f, y=forecast_6ahead$residuals,plot.it=TRUE, probs = compare.q,
+       xlab = "Theoretical Quantiles", ylab = "Sample Quantiles")
+# sigma.eps_6ahead = sd(forecast_6ahead$residuals)
+# obs.p_6ahead = c()
+# for(ii in compare.q){
+#   obs.p_6ahead <- c(obs.p_6ahead,mean(pnorm(forecast_6ahead$residuals,sd=sigma.eps_6ahead) <= ii))
+# }
+# dat.obs_6ahead <- data.frame(Observed=obs.p_6ahead,Theoretical=compare.q)
+# dat.theo_6ahead <- data.frame(Observed=compare.q,Theoretical=compare.q)
+# 
+# ggplot_object = ggplot(data=dat.obs_6ahead )
+# ggplot_object+
+#   geom_line(data=dat.theo_1ahead,aes(x=Theoretical,y=Observed),size=2)+
+#   geom_point(data=dat.obs_6ahead,aes(x=Theoretical,y=Observed),size=5,colour="blue")
 
-dat.obs_1ahead <- data.frame(Observed=obs.p_1ahead,Theoretical=compare.q)
-dat.theo_1ahead <- data.frame(Observed=compare.q,Theoretical=compare.q)
-dat.obs_6ahead <- data.frame(Observed=obs.p_6ahead,Theoretical=compare.q)
-dat.theo_6ahead <- data.frame(Observed=compare.q,Theoretical=compare.q)
-
-ggplot_object = ggplot(data=dat.obs_1ahead )
-ggplot_object+
-  geom_line(data=dat.theo_1ahead,mapping=aes(x=Theoretical,y=Observed),size=2)+
-  geom_point(data=dat.obs_1ahead,mapping=aes(x=Theoretical,y=Observed),size=5,colour="blue")
-
-ggplot_object = ggplot(data=dat.obs_6ahead )
-ggplot_object+
-  geom_line(data=dat.theo_1ahead,mapping=aes(x=Theoretical,y=Observed),size=2)+
-  geom_point(data=dat.obs_6ahead,mapping=aes(x=Theoretical,y=Observed),size=5,colour="blue")
 
 #---------------------------------------------------------------
 
@@ -193,8 +185,8 @@ hct.res <- residuals(arima(training_set$HC.f,order=c(2,1,1),seasonal=list(order=
 
 ccf(hct.res,temp.mdl$residuals)
 grid()
-Ta_lag1 = lag(training_set$Ta.f,1)
-training_set$ext_regressors = cbind(WD=WD[1:6000],Ta_lag1=Ta_lag1) 
+Ta_lag1 = lag(data$Ta.f,1)
+data$ext_regressors = cbind(WD=WD,Ta_lag1=Ta_lag1) 
 
 
 dev.off()
@@ -226,8 +218,8 @@ HC_Wind.res <- residuals(arima(training_set$HC.f,order=c(2,1,1),seasonal=list(or
 dev.off()
 ccf(HC_Wind.res,temp.mdl$residuals) 
 grid()
-W_lag = lag(training_set$W.f,2)
-training_set$ext_regressors = cbind(WD=WD[1:6000],Ta_lag1=Ta_lag1, W_lag=W_lag)
+W_lag = lag(data$W.f,2)
+data$ext_regressors = cbind(WD=WD,Ta_lag1=Ta_lag1, W_lag=W_lag)
 
 
 plot(data$GR.f ~time,
@@ -261,26 +253,28 @@ temp.mdl <- arima(training_set$GR.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),
 HC_GR.res <- residuals(arima(training_set$HC.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24),fixed=temp.mdl$coef))
 
 dev.off()
-ccf(HC_GR.res,temp.mdl$residuals)  #FUCKED LAG
+ccf(HC_GR.res,temp.mdl$residuals)  
 grid()
-GR_lag = lag(training_set$GR.f,1)
-training_set$ext_regressors = cbind(WD=WD[1:6000],Ta_lag1=Ta_lag1, W_lag=W_lag,GR_lag=GR_lag)
+GR_lag = lag(data$GR.f,1)
+data$ext_regressors = cbind(WD=WD,Ta_lag1=Ta_lag1, W_lag=W_lag,GR_lag=GR_lag)
 
 
 
 #TASK4
+
 dev.off()
 #fit4 is the arma model with 4 external regressors, work days and amb temp laged 1
 # outside wind lagged 2 and solar radiation data lagged 1
+fit4 =NULL
 fit4 = Arima(training_set$HC.f,
              order=c(2,1,1),
              seasonal = list(order = c(1,0,1), period = 24),
-             xreg = training_set$ext_regressors[,1:4])
+             xreg = training_set$ext_regressors)
 acf(fit4$residuals)
 fit4
 dev.off()
 par(mfrow = c(2,1))
-forecast_1ahead = forecast.Arima(fit4,fan=TRUE, h=1, xreg= test_set$ext_regressors[1,1:4])
+forecast_1ahead = forecast.Arima(fit4,fan=TRUE,h=1, xreg= test_set$ext_regressors[1,])
 plot.forecast(forecast_1ahead,
               include=24, 
               type='l',
@@ -289,7 +283,10 @@ plot.forecast(forecast_1ahead,
               main="Forecast, 1 hour ahead")
 lines(c(training_set$HC.f, test_set$HC.f[1]))
 
-forecast_6ahead= forecast.Arima(fit4,fan=TRUE, h=6, xreg= test_set$ext_regressors[1:6,1:4])
+forecast_6ahead= forecast.Arima(fit4,
+                                fan=TRUE,
+                                h=6,
+                                xreg= test_set$ext_regressors[1:6,])
 plot.forecast(forecast_6ahead,
               include=24,
               type='l',
