@@ -10,10 +10,6 @@ require("forecast")
 #install.packages("ggplot2")
 #require("ggplot2")
 data = read.csv("veks.csv")
-#data$HC.f = ts(data$HC.f,frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
-#data$Ta.f = ts(data$Ta.f, frequency = 24, start =c( 1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
-#data$W.f = ts(data$W.f, frequency = 24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
-#data$GR.f = ts(data$GR.f, frequency =24, start = c(1995,((data$ds.diy[1]*24)+data$ds.hh[1])))
 time = as.POSIXct("1960-1-1") + (data$jdate*24 + data$hh) *3600
 # ------------ Task 1 ----------------------
 #Consider the time series of heat consumption.
@@ -138,22 +134,8 @@ lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 
 # META QUALITY Á PREDICTION INTERVAL.
 dev.off()
-compare.q = seq(50,99,by=1)
-qqplot(x=training_set$HC.f, y=forecast_6ahead$residuals,plot.it=TRUE, probs = compare.q,
-       xlab = "Theoretical Quantiles", ylab = "Sample Quantiles")
-# sigma.eps_6ahead = sd(forecast_6ahead$residuals)
-# obs.p_6ahead = c()
-# for(ii in compare.q){
-#   obs.p_6ahead <- c(obs.p_6ahead,mean(pnorm(forecast_6ahead$residuals,sd=sigma.eps_6ahead) <= ii))
-# }
-# dat.obs_6ahead <- data.frame(Observed=obs.p_6ahead,Theoretical=compare.q)
-# dat.theo_6ahead <- data.frame(Observed=compare.q,Theoretical=compare.q)
-# 
-# ggplot_object = ggplot(data=dat.obs_6ahead )
-# ggplot_object+
-#   geom_line(data=dat.theo_1ahead,aes(x=Theoretical,y=Observed),size=2)+
-#   geom_point(data=dat.obs_6ahead,aes(x=Theoretical,y=Observed),size=5,colour="blue")
-
+qqnorm(forecast_6ahead$residuals)
+qqline(forecast_6ahead$residuals,col=2)
 
 #---------------------------------------------------------------
 
@@ -218,7 +200,6 @@ temp.mdl <- arima(training_set$W.f,order=c(2,1,1), seasonal = list(order=c(1,0,0
 HC_Wind.res <- residuals(arima(training_set$HC.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24),fixed=c(temp.mdl$coef)))
 #HC_Wind.res = na.action(HC_Wind.res,na.rm=TRUE)
 dev.off()
-<<<<<<< Updated upstream
 ccf(HC_Wind.res,temp.mdl$residuals) 
 =======
 
@@ -258,7 +239,7 @@ acf(diff(training_set$GR.f))
 pacf(diff(training_set$GR.f))
 #We make new model for external regressor GR.f
 temp.mdl <- arima(training_set$GR.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24))
-#Now we use this model to prewhiten our data (heat consumtion)
+#Now we use this model to prewhiten our data
 HC_GR.res <- residuals(arima(training_set$HC.f,order=c(2,1,1),seasonal=list(order=c(1,0,0),period=24),fixed=temp.mdl$coef))
 
 dev.off()
@@ -266,7 +247,8 @@ ccf(HC_GR.res,temp.mdl$residuals)
 grid()
 GR_lag = lag(data$GR.f,1)
 data$ext_regressors = cbind(WD=WD,Ta_lag1=Ta_lag1, W_lag=W_lag,GR_lag=GR_lag)
-
+training_set = subset(data, data$row.names <= 6000) 
+test_set = subset(data,data$row.names > 6000)
 
 
 #TASK4
@@ -304,9 +286,13 @@ plot.forecast(forecast_6ahead,
               main="Forecast, 6 hour ahead")
 lines(c(training_set$HC.f, test_set$HC.f[1:6]))
 
-# ATTI THETTA MODEL EKKI AD VERA BETRA, COMMENTA A THAD?
-# This model was suppose to be better than the model using just heat consumption but it 
-# looks pretty much the same. Maby the temperature, radiation etc. aren't influencing the
+# META QUALITY Á PREDICTION INTERVAL.
+dev.off()
+qqnorm(forecast_6ahead$residuals)
+qqline(forecast_6ahead$residuals,col=2)
+
+# We were wishing this model would improve the model using but it 
+# looks pretty much the same (comparing QQ plots). Maybe the wind, radiation etc. aren't influencing the
 # heat consumption as we thought.
 
 # -------------------------  TASK 5  --------------------------
@@ -328,8 +314,4 @@ hist(Predict2)
 # gildi en eg helt ad tetta aetti ad virka til ad fa 6 gildi fram i timann. tetta med innov, tad er eitthvad
 # til ad segja ad vid seum ad gera ut fra tvi gildi (a samt ad vera haegt ad setja inn vektor en ta fae eg svo
 # asnalegt gildi ut), ef vid erum ekki med innov skipun faum vid bara tolur sem eru td. 0.02, -0.14,...
-# te random tolur i kringum null.En eg var vakandi til kl.4 i nott ad laera og aetla heim ad sofa nuna :P
-# verd i skolanum um helgina, vertu i bandi vid mig ef tu kikir eitthvad a tetta, annars er bara ad skila.
-
-
-
+# te random tolur i kringum null.
